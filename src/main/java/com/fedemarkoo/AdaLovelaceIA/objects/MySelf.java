@@ -1,10 +1,13 @@
 package com.fedemarkoo.AdaLovelaceIA.objects;
 
 import com.fedemarkoo.AdaLovelaceIA.exceptions.UnknownClassException;
+import com.fedemarkoo.AdaLovelaceIA.service.GeneratorService;
 import com.fedemarkoo.AdaLovelaceIA.utils.Context;
 import com.fedemarkoo.AdaLovelaceIA.utils.FraseUtil;
 import com.fedemarkoo.AdaLovelaceIA.utils.User;
+import lombok.Singleton;
 
+@Singleton
 public class MySelf extends Object {
 
 	public String saludar(FraseUtil fraseUtil) {
@@ -26,5 +29,12 @@ public class MySelf extends Object {
 			e.printStackTrace();
 		}
 		return saludar(fraseUtil);
+	}
+
+	public String corregirPalabra(FraseUtil fraseUtil) {
+
+
+		GeneratorService.corregirDiccionario(fraseUtil);
+		return "listo!";
 	}
 }

@@ -2,14 +2,15 @@ package com.fedemarkoo.AdaLovelaceIA.objects;
 
 import com.fedemarkoo.AdaLovelaceIA.utils.Context;
 import com.fedemarkoo.AdaLovelaceIA.utils.FraseUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Lookup;
+import lombok.Singleton;
 import org.springframework.stereotype.Component;
 
 @Component
+@Singleton
 public class Object {
 
 	private static Context context;
+
 	public static Context getContext() {
 		if (context != null) {
 			return context;
@@ -17,8 +18,10 @@ public class Object {
 		return context = new Context();
 	}
 
+	@SuppressWarnings("SameParameterValue")
 	protected void setExpectedMethod(String method, Class clazz) {
 		try {
+			//noinspection unchecked
 			getContext().setExpectedMethod(clazz.getDeclaredMethod(method, FraseUtil.class));
 			getContext().setInstance(this);
 		} catch (Exception e) {
@@ -28,6 +31,6 @@ public class Object {
 
 	public static void cleanExpectedMethod() {
 		getContext().setExpectedMethod(null);
-		getContext().setInstance(null);
 	}
+
 }

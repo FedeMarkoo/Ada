@@ -4,32 +4,32 @@ import com.fedemarkoo.AdaLovelaceIA.exceptions.UnknownClassException;
 import com.fedemarkoo.AdaLovelaceIA.exceptions.UnknownMethodException;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
-import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Stream;
 
 @NoArgsConstructor
 public class Action {
 	private ObjectUtil object;
 	private Method method;
-	private Class clazz;
+	private static final String OBJECTS_LOCATION = "com.fedemarkoo.AdaLovelaceIA.objects";
 	private java.lang.Object instance;
-	private static String OBJECTS_LOCATION = "com.fedemarkoo.AdaLovelaceIA.objects.";
+	private Class<?> clazz;
+
+	private static boolean anyMatch(final Metodo m, final String name) {
+		return m.getSinonimos() != null && m.getSinonimos().stream().anyMatch(m2 -> m2.equals(name));
+	}
 
 	public void setMethod(String method) throws UnknownMethodException, UnknownClassException {
 		try {
-			this.method = getClazz().getMethod(getMethodName(method),FraseUtil.class);
+			this.method = getClazz().getMethod(getMethodName(method), FraseUtil.class);
 		} catch (ReflectiveOperationException e) {
 			throw new UnknownMethodException(e);
 		}
 	}
 
-	private Class getClazz() throws UnknownClassException {
+	private Class<?> getClazz() throws UnknownClassException {
 		if (clazz != null)
 			return clazz;
 
@@ -41,40 +41,34 @@ public class Action {
 	}
 
 	@SneakyThrows
-	public java.lang.Object execute(FraseUtil fraseUtil) {
-		return method.invoke(getInstance(),fraseUtil);
-	}
-
-	@SneakyThrows
 	private java.lang.Object getInstance() {
 		if (instance != null) return instance;
 		return instance = getClazz().getConstructor().newInstance();
 	}
 
-	private String getMethodName(String method) throws UnknownMethodException {
+	@SneakyThrows
+	public java.lang.Object execute(FraseUtil fraseUtil) {
+		return method.invoke(getInstance(), fraseUtil);
+	}
+
+	private String getMethodName(final String method) throws UnknownMethodException {
 		List<Metodo> metodos = getObject().getMetodos();
 		Metodo metodo = metodos.stream().filter(m ->
 				m.getName().equals(method)
-		).findFirst().get();
+		).findFirst().orElse(getMethodNameSinonimo(method));
 		if (metodo == null) {
-			metodo = getMethodNameSinonimo(method);
+			return Arrays.stream(clazz.getMethods())
+					.filter(m -> m.getName().equals(method))
+					.findFirst().orElseThrow(UnknownMethodException::new).getName();
 		}
 		return metodo.getName();
 	}
 
-	private Metodo getMethodNameSinonimo(String method) throws UnknownMethodException {
+	private Metodo getMethodNameSinonimo(String method) {
 		List<Metodo> metodos = getObject().getMetodos();
-		Metodo metodo = metodos.stream().filter(m ->
+		return metodos.stream().filter(m ->
 				anyMatch(m, method)
-		).findAny().get();
-		if (metodo == null) {
-			throw new UnknownMethodException();
-		}
-		return metodo;
-	}
-
-	private static boolean anyMatch(Metodo m, String name) {
-		return m.getSinonimos().stream().anyMatch(m2 -> m2.equals(name));
+		).findAny().orElse(null);
 	}
 
 	private ObjectUtil getObject() {
